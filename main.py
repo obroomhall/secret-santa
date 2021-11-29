@@ -6,7 +6,6 @@ import smtplib
 import ssl
 import time
 import webbrowser
-from datetime import datetime
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -57,7 +56,7 @@ def load_people(seed):
     return people
 
 
-def sleep_if_needed(next_time):
+def sleep_if_needed(next_time, time_delay):
     potential_sleep_time = next_time - datetime.datetime.now()
 
     if potential_sleep_time > datetime.timedelta(0):
@@ -75,39 +74,26 @@ def load_image(id):
             return MIMEImage(fp.read())
 
 
-if __name__ == '__main__':
-
-    # random christmas tracks from spotify
-    random_tracks = random_tracks('5OP7itTh52BMfZS1DJrdlv')
-
-    # let user choose track from list
-    track = choose_track(random_tracks)
-
-    # load people from resources
-    people = load_people(track['id'])
-
-    # open track preview
-    webbrowser.open(track['preview_url'])
+def send_emails(people):
 
     # ensure emails are sent out within playtime of preview
     delay = 30 / len(people)  # previews are 30 seconds long
     time_delay = datetime.timedelta(0, delay)
     next_time = datetime.datetime.now() + time_delay
 
-    # send emails
     with smtplib.SMTP_SSL("smtp.gmail.com", os.getenv("SMTP_PORT"), context=ssl.create_default_context()) as server:
 
         server.login(os.getenv("SMTP_USERNAME"), os.getenv("SMTP_PASSWORD"))
 
         for idx, assailant in enumerate(people):
-            next_time = sleep_if_needed(next_time)
+            next_time = sleep_if_needed(next_time, time_delay)
 
             strFrom = os.getenv("SMTP_USERNAME")
             strTo = assailant['id'] + '@groundcontrol.com'
 
             msgRoot = MIMEMultipart('related')
             msgRoot['Subject'] = 'Your Secret Santa'
-            msgRoot['From'] = os.getenv("SMTP_USERNAME")
+            msgRoot['From'] = strFrom
             msgRoot['To'] = strTo
             msgRoot.preamble = 'Multi-part message in MIME format.'
 
@@ -125,5 +111,23 @@ if __name__ == '__main__':
             msgImage.add_header('Content-ID', '<headshot>')
             msgRoot.attach(msgImage)
 
-            server.sendmail(strFrom, strTo, msgRoot.as_string())
+            # server.sendmail(strFrom, strTo, msgRoot.as_string())
             print('Sending random victim to {to}'.format(to=strTo))
+
+
+if __name__ == '__main__':
+
+    # random christmas tracks from spotify
+    random_tracks = random_tracks('5OP7itTh52BMfZS1DJrdlv')
+
+    # let user choose track from list
+    track = choose_track(random_tracks)
+
+    # load people from resources
+    people = load_people(track['id'])
+
+    # open track preview
+    webbrowser.open(track['preview_url'])
+
+    # send emails during track preview
+    send_emails(people)
