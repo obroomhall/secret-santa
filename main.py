@@ -89,7 +89,7 @@ def send_emails(people):
             next_time = sleep_if_needed(next_time, time_delay)
 
             strFrom = os.getenv("SMTP_USERNAME")
-            strTo = assailant['id'] + '@groundcontrol.com'
+            strTo = assailant['email']
 
             msgRoot = MIMEMultipart('related')
             msgRoot['Subject'] = 'Your Secret Santa'
